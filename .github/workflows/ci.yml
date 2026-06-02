@@ -1,0 +1,62 @@
+name: CI Workflow MLflow
+
+# Workflow akan berjalan otomatis setiap ada 'push' ke branch main/master
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengambil kode dari repositori GitHub Anda
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan Python (Sesuai rekomendasi Dicoding)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.7'
+
+      # 3. Menginstal library dasar sesuai modelling.py
+      - name: Install Dependencies
+        run: |
+          pip install mlflow==2.19.0
+          pip install scikit-learn pandas
+
+      # 4. Menjalankan training model lewat MLProject
+      - name: Run MLflow Project
+        run: |
+          cd MLProject
+          mlflow run .
+
+      # 5. Menyimpan Artefak MLruns ke GitHub (Sesuai syarat kriteria Advance)
+      - name: Upload MLruns Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlruns-artifact
+          path: MLProject/mlruns/
+
+      # 6. Login ke Docker Hub menggunakan Secrets yang sudah Anda buat
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 7. Membangun Docker Image dan Push ke Docker Hub
+      - name: Build and Push Docker Image
+        run: |
+          # Karena MLflow membuat ID folder acak, perintah ini otomatis mencari folder "model"
+          MODEL_PATH=$(find MLProject/mlruns -type d -name "model" | head -n 1)
+          echo "Lokasi model ditemukan di: $MODEL_PATH"
+          
+          # Membangun docker image
+          mlflow models build-docker -m $MODEL_PATH -n ${{ secrets.DOCKER_USERNAME }}/eksperimen-model:latest
+          
+          # Mendorong image ke Docker Hub
+          docker push ${{ secrets.DOCKER_USERNAME }}/eksperimen-model:latest
