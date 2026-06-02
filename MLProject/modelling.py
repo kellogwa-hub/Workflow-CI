@@ -17,7 +17,7 @@ from sklearn.metrics import classification_report, accuracy_score
 
 def train_model():
     # 1. Set alamat tracking MLflow ke localhost
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    #mlflow.set_tracking_uri("http://127.0.0.1:5000")
     mlflow.set_experiment("Eksperimen_Loan_KellogMK")
 
     # Aktifkan fitur autolog agar MLflow mencatat parameter & metrik secara otomatis
