@@ -32,7 +32,7 @@ jobs:
       - name: Run MLflow Project
         run: |
           cd MLProject
-          mlflow run .
+          mlflow run . --env-manager local
 
       # 5. Menyimpan Artefak MLruns ke GitHub (Sesuai syarat kriteria Advance)
       - name: Upload MLruns Artifact
