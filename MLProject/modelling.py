@@ -23,7 +23,7 @@ def train_model():
     # Aktifkan fitur autolog agar MLflow mencatat parameter & metrik secara otomatis
     mlflow.autolog()
 
-    with mlflow.start_run(run_name="Baseline_RandomForest"):
+    with mlflow.start_run(run_name="Baseline_RandomForest", nested=True):
         # 2. Muat data bersih hasil Kriteria 1
         df = pd.read_csv("loan_dataset_preprocessing/loan_clean.csv")
 
