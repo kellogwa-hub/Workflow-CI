@@ -48,15 +48,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 7. Membangun Docker Image dan Push ke Docker Hub
+      # 7. Membangun Docker Image dan Push ke Docker Hub (Dengan Patching Python 3.9)
       - name: Build and Push Docker Image
         run: |
-          # Karena MLflow membuat ID folder acak, perintah ini otomatis mencari folder "model"
+          # Mencari lokasi folder model
           MODEL_PATH=$(find MLProject/mlruns -type d -name "model" | head -n 1)
           echo "Lokasi model ditemukan di: $MODEL_PATH"
           
-          # Membangun docker image
-          mlflow models build-docker -m $MODEL_PATH -n ${{ secrets.DOCKER_USERNAME }}/eksperimen-model:latest
+          # A. Generate Dockerfile (Sebagai ganti langsung build-docker karena bug MLflow 2.19.0)
+          mlflow models generate-dockerfile -m $MODEL_PATH -d docker_build_dir
           
-          # Mendorong image ke Docker Hub
+          # B. Patching URL get-pip.py yang usang agar menggunakan versi spesifik Python 3.9
+          sed -i 's|https://bootstrap.pypa.io/get-pip.py|https://bootstrap.pypa.io/pip/3.9/get-pip.py|g' docker_build_dir/Dockerfile
+          
+          # C. Build Docker image dari Dockerfile yang sudah diperbaiki
+          cd docker_build_dir
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/eksperimen-model:latest .
+          
+          # D. Mendorong image ke Docker Hub
           docker push ${{ secrets.DOCKER_USERNAME }}/eksperimen-model:latest
